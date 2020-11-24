@@ -23,7 +23,7 @@ import io.realm.RealmObjectChangeListener
  *
  * @param <T> the type of the RealmModel
 </T> */
-class LiveRealmObject<T : RealmModel?> @MainThread constructor(obj: T) : LiveData<T>() {
+class LiveRealmObject<T : RealmModel?> @MainThread constructor(obj: T?) : LiveData<T>() {
 
     private val listener =
         RealmObjectChangeListener<T> { obj, objectChangeSet ->
