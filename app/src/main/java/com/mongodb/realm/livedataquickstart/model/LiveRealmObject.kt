@@ -1,12 +1,11 @@
 package com.mongodb.realm.livedataquickstart.model
 
-
 import androidx.annotation.MainThread
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import io.realm.RealmModel
 import io.realm.RealmObject
 import io.realm.RealmObjectChangeListener
-
 
 /**
  * This class represents a RealmObject wrapped inside a LiveData.
@@ -21,24 +20,35 @@ import io.realm.RealmObjectChangeListener
  * LiveRealmObject observes the object until it is invalidated. You can invalidate the RealmObject by
  * deleting it or by closing the realm that owns it.
  *
- * @param <T> the type of the RealmModel
-</T> */
-class LiveRealmObject<T : RealmModel?> @MainThread constructor(obj: T?) : LiveData<T>() {
+ * @param obj the RealmModel instance to which we want to subscribe for changes
+ * @param T the type of the RealmModel
+ */
+class LiveRealmObject<T : RealmModel?> @MainThread constructor(
+    obj: T? = null
+) : MutableLiveData<T>() {
 
-    private val listener =
-        RealmObjectChangeListener<T> { obj, objectChangeSet ->
-            if (!objectChangeSet!!.isDeleted) {
-                setValue(obj)
-            } else { // Because invalidated objects are unsafe to set in LiveData, pass null instead.
-                setValue(null)
-            }
+    private val listener = RealmObjectChangeListener<T> { obj, objectChangeSet ->
+        if (!objectChangeSet!!.isDeleted) {
+            setValue(obj)
+        } else { // Because invalidated objects are unsafe to set in LiveData, pass null instead.
+            setValue(null)
         }
+    }
+
+    init {
+        // it is allowed to initialize this LiveData with null - maybe we don't have anything in the DB yet
+        value = obj
+    }
 
     /**
      * Starts observing the RealmObject if we have observers and the object is still valid.
      */
     override fun onActive() {
         super.onActive()
+
+        // remove all existing listeners in the current object
+        removeListener(this.value)
+
         val obj = value
         if (obj != null && RealmObject.isValid(obj)) {
             RealmObject.addChangeListener(obj, listener)
@@ -57,19 +67,25 @@ class LiveRealmObject<T : RealmModel?> @MainThread constructor(obj: T?) : LiveDa
     }
 
     /**
-     * Wraps the provided managed RealmObject as a LiveData.
-     *
-     * The provided object should be managed, and should be valid.
-     *
-     * @param object the managed RealmModel to wrap as LiveData
+     * Sets the value for this LiveData instance. It is necessary to enforce only valid objects are
+     * being set so that a RealmObjectChangeListener can be properly added.
      */
-    init {
-        require(RealmObject.isManaged(obj)) { "LiveRealmObject only supports managed RealmModel instances!" }
-        require(RealmObject.isValid(obj)) { "The provided RealmObject is no longer valid, and therefore cannot be observed for changes." }
-        if (RealmObject.isLoaded(obj)) {
-            // we should not notify observers when results aren't ready yet (async query).
-            // however, synchronous query should be set explicitly.
-            setValue(obj)
+    override fun setValue(value: T?) {
+        // remove all existing listeners in the current object
+        removeListener(this.value)
+
+        // add again for the new value
+        if (value != null && RealmObject.isValid(value)) {
+            RealmObject.addChangeListener(value, listener)
+        }
+
+        // proper assignation
+        super.setValue(value)
+    }
+
+    private fun removeListener(value: T?) {
+        value?.let { currentValue ->
+            RealmObject.removeAllChangeListeners(currentValue)
         }
     }
 }
