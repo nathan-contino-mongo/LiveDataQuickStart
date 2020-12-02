@@ -61,6 +61,7 @@ class LiveRealmObject<T : RealmModel?> @MainThread constructor(obj: T?) : Mutabl
             RealmObject.removeChangeListener(obj, listener)
         }
     }
+    // :code-block-end:
 
     var value : T? = obj
 }
