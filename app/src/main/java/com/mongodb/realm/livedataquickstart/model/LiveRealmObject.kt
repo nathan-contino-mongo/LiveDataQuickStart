@@ -3,6 +3,7 @@ package com.mongodb.realm.livedataquickstart.model
 
 import androidx.annotation.MainThread
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import io.realm.RealmModel
 import io.realm.RealmObject
 import io.realm.RealmObjectChangeListener
@@ -23,8 +24,9 @@ import io.realm.RealmObjectChangeListener
  *
  * @param <T> the type of the RealmModel
 </T> */
-class LiveRealmObject<T : RealmModel?> @MainThread constructor(obj: T?) : LiveData<T>() {
+class LiveRealmObject<T : RealmModel?> @MainThread constructor(obj: T?) : MutableLiveData<T>() {
 
+    // :code-block-start: listener
     private val listener =
         RealmObjectChangeListener<T> { obj, objectChangeSet ->
             if (!objectChangeSet!!.isDeleted) {
@@ -33,10 +35,12 @@ class LiveRealmObject<T : RealmModel?> @MainThread constructor(obj: T?) : LiveDa
                 setValue(null)
             }
         }
+    // :code-block-end:
 
     /**
      * Starts observing the RealmObject if we have observers and the object is still valid.
      */
+    // :code-block-start: onactive
     override fun onActive() {
         super.onActive()
         val obj = value
@@ -44,10 +48,12 @@ class LiveRealmObject<T : RealmModel?> @MainThread constructor(obj: T?) : LiveDa
             RealmObject.addChangeListener(obj, listener)
         }
     }
+    // :code-block-end:
 
     /**
      * Stops observing the RealmObject.
      */
+    // :code-block-start: oninactive
     override fun onInactive() {
         super.onInactive()
         val obj = value
@@ -56,20 +62,5 @@ class LiveRealmObject<T : RealmModel?> @MainThread constructor(obj: T?) : LiveDa
         }
     }
 
-    /**
-     * Wraps the provided managed RealmObject as a LiveData.
-     *
-     * The provided object should be managed, and should be valid.
-     *
-     * @param object the managed RealmModel to wrap as LiveData
-     */
-    init {
-        require(RealmObject.isManaged(obj)) { "LiveRealmObject only supports managed RealmModel instances!" }
-        require(RealmObject.isValid(obj)) { "The provided RealmObject is no longer valid, and therefore cannot be observed for changes." }
-        if (RealmObject.isLoaded(obj)) {
-            // we should not notify observers when results aren't ready yet (async query).
-            // however, synchronous query should be set explicitly.
-            setValue(obj)
-        }
-    }
+    var value : T? = obj
 }

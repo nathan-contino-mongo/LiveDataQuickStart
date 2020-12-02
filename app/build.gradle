@@ -4,6 +4,7 @@ apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'realm-android'
 
+// :code-block-start: databinding-enable
 android {
     compileSdkVersion 30
     buildToolsVersion "30.0.2"
@@ -18,9 +19,11 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // :hide-start:
     buildFeatures {
         dataBinding true
     }
+    // :hide-end:
 
     buildTypes {
         release {
@@ -36,11 +39,17 @@ android {
         jvmTarget = '1.8'
     }
 }
+// :code-block-end:
 
+// :code-block-start: sync-enable
+// :hide-start:
 realm {
     syncEnabled = true
 }
+// :hide-end:
+// :code-block-end:
 
+// :code-block-start: livedata-dependency
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
@@ -50,9 +59,12 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'androidx.navigation:navigation-fragment-ktx:2.3.1'
     implementation 'androidx.navigation:navigation-ui-ktx:2.3.1'
+    // :hide-start:
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.2.0"
+    // :hide-end:
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
 }
+// :code-block-end:
